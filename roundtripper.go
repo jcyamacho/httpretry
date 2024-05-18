@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	defaultMaxRetryCount = 5
+)
+
 // RetryRoundtripper is the roundtripper that will wrap around the actual http.Transport roundtripper
 // to enrich the http client with retry functionality.
 type RetryRoundtripper struct {
@@ -14,6 +18,25 @@ type RetryRoundtripper struct {
 	MaxRetryCount    int
 	ShouldRetry      RetryPolicy
 	CalculateBackoff BackoffPolicy
+}
+
+func NewRoundtripper(next http.RoundTripper, opts ...Option) *RetryRoundtripper {
+	if next == nil {
+		next = http.DefaultTransport
+	}
+
+	roundTripper := &RetryRoundtripper{
+		Next:             next,
+		MaxRetryCount:    defaultMaxRetryCount,
+		ShouldRetry:      defaultRetryPolicy,
+		CalculateBackoff: defaultBackoffPolicy,
+	}
+
+	for _, o := range opts {
+		o(roundTripper)
+	}
+
+	return roundTripper
 }
 
 // RoundTrip implements the actual roundtripper interface (http.RoundTripper).

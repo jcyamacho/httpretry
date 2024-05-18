@@ -3,14 +3,41 @@ package httpretry
 import (
 	"bytes"
 	"context"
-	"github.com/stretchr/testify/assert"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestNewNewRoundtripper(t *testing.T) {
+	check := assert.New(t)
+
+	t.Run("should create default rountriper", func(t *testing.T) {
+		customTransport := &http.Transport{}
+		roundTripper := NewRoundtripper(customTransport)
+
+		check.Equal(customTransport, roundTripper.Next)
+		check.Equal(5, roundTripper.MaxRetryCount)
+		check.NotNil(roundTripper.CalculateBackoff)
+		check.NotNil(roundTripper.ShouldRetry)
+	})
+
+	t.Run("should use default http transport if nil next provided", func(t *testing.T) {
+		roundTripper := NewRoundtripper(nil)
+		check.Equal(http.DefaultTransport, roundTripper.Next)
+	})
+
+	t.Run("should apply options", func(t *testing.T) {
+		maxRetryCount := 2
+
+		roundTripper := NewRoundtripper(nil, WithMaxRetryCount(maxRetryCount))
+
+		check.Equal(maxRetryCount, roundTripper.MaxRetryCount)
+	})
+}
 
 func TestRetryRoundtripperSimple(t *testing.T) {
 	check := assert.New(t)
@@ -195,7 +222,7 @@ func TestRetryRoundtripperWithBody(t *testing.T) {
 
 func readerContains(t *testing.T, r io.Reader, substring string) bool {
 	t.Helper()
-	d, err := ioutil.ReadAll(r)
+	d, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatal("could not read body: ", err.Error())
 	}
@@ -268,7 +295,7 @@ func FakeResponse(req *http.Request, code int, body []byte) *http.Response {
 	var contentLength int64 = -1
 
 	if len(body) != 0 {
-		bodyReadCloser = ioutil.NopCloser(bytes.NewReader(body))
+		bodyReadCloser = io.NopCloser(bytes.NewReader(body))
 		contentLength = int64(len(body))
 	}
 
