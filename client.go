@@ -36,9 +36,7 @@ func NewCustomClient(client *http.Client, opts ...Option) *http.Client {
 		panic("client must not be nil")
 	}
 
-	retryRoundtripper := NewRoundtripper(client.Transport, opts...)
-
-	client.Transport = retryRoundtripper
+	client.Transport = NewRoundtripper(client.Transport, opts...)
 
 	return client
 }
