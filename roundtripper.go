@@ -20,6 +20,8 @@ type RetryRoundtripper struct {
 	CalculateBackoff BackoffPolicy
 }
 
+// NewRoundtripper creates a new RetryRoundtripper with the provided options.
+// If no next [net/http.RoundTripper] is provided, the default [net/http.DefaultTransport] will be used.
 func NewRoundtripper(next http.RoundTripper, opts ...Option) *RetryRoundtripper {
 	if next == nil {
 		next = http.DefaultTransport
